@@ -11,6 +11,8 @@
   "dependencies": {
     "@google/model-viewer": "^4.2.0",
     "@types/three": "^0.183.1",
+    "@vercel/blob": "^2.3.1",
+    "nanoid": "^5.1.7",
     "next": "16.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",

@@ -1,0 +1,49 @@
+/**
+ * storage.ts
+ * 로컬(개발): public/uploads/ 에 파일 저장, /uploads/<id>.<ext> URL 반환
+ * Vercel(배포): BLOB_READ_WRITE_TOKEN 환경변수가 있으면 @vercel/blob 사용
+ */
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
+
+export interface StorageResult {
+  url: string;
+  size: number;
+}
+
+export async function storeFile(
+  buffer: Buffer,
+  filename: string,
+  id: string
+): Promise<StorageResult> {
+  const ext = path.extname(filename).toLowerCase();
+
+  // Vercel Blob (배포 환경)
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const { put } = await import("@vercel/blob");
+    const blob = await put(`models/${id}${ext}`, buffer, {
+      access: "public",
+      contentType: getMimeType(ext),
+    });
+    return { url: blob.url, size: buffer.length };
+  }
+
+  // 로컬 파일시스템 (개발 환경)
+  const uploadDir = path.join(process.cwd(), "public", "uploads");
+  await mkdir(uploadDir, { recursive: true });
+  const filePath = path.join(uploadDir, `${id}${ext}`);
+  await writeFile(filePath, buffer);
+  return { url: `/uploads/${id}${ext}`, size: buffer.length };
+}
+
+function getMimeType(ext: string): string {
+  const map: Record<string, string> = {
+    ".glb": "model/gltf-binary",
+    ".gltf": "model/gltf+json",
+    ".obj": "text/plain",
+    ".stl": "application/octet-stream",
+    ".usdz": "model/vnd.usdz+zip",
+    ".fbx": "application/octet-stream",
+  };
+  return map[ext] ?? "application/octet-stream";
+}
