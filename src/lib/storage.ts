@@ -51,9 +51,17 @@ function getMimeType(ext: string): string {
     ".glb": "model/gltf-binary",
     ".gltf": "model/gltf+json",
     ".obj": "text/plain",
+    ".mtl": "text/plain",
     ".stl": "application/octet-stream",
+    ".ply": "application/octet-stream",
     ".usdz": "model/vnd.usdz+zip",
     ".fbx": "application/octet-stream",
+    ".zip": "application/zip",
+    ".dae": "model/vnd.collada+xml",
+    ".3ds": "application/octet-stream",
+    ".3mf": "model/3mf+xml",
+    ".blend": "application/octet-stream",
+    ".abc": "application/octet-stream",
   };
   return map[ext] ?? "application/octet-stream";
 }
