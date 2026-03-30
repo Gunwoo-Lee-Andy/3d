@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import type { ModelRecord } from "@/lib/db";
 
-const GLBViewer = dynamic(() => import("../../components/GLBViewer"), {
+const ModelViewer = dynamic(() => import("../../components/ModelViewer"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-400 text-sm">
@@ -81,7 +81,11 @@ export default function SharedViewer({ model }: { model: ModelRecord }) {
 
       {/* Viewer */}
       <div className="flex-1 min-h-0">
-        {arMode ? <ARViewer url={model.url} /> : <GLBViewer url={model.url} />}
+        {arMode ? (
+          <ARViewer url={model.url} />
+        ) : (
+          <ModelViewer url={model.url} filename={model.name} />
+        )}
       </div>
 
       {/* 조회수 */}

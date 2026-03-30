@@ -12,6 +12,8 @@ export interface ModelRecord {
   url: string;
   size: number;
   ext: string;
+  modelType?: string; // ZIP 내부 주 파일 타입 (obj, fbx 등)
+  files?: string[]; // ZIP 내 파일 목록
   createdAt: string;
   views: number;
 }

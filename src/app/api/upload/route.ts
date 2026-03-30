@@ -4,8 +4,11 @@ import path from "path";
 import { storeFile } from "@/lib/storage";
 import { saveModel } from "@/lib/db";
 
-const MAX_SIZE = 100 * 1024 * 1024; // 100MB
-const ALLOWED_EXT = new Set([".glb", ".gltf", ".obj", ".stl", ".usdz", ".fbx"]);
+const MAX_SIZE = 500 * 1024 * 1024; // 500MB
+const ALLOWED_EXT = new Set([
+  ".glb", ".gltf", ".obj", ".mtl", ".stl", ".usdz", ".fbx",
+  ".ply", ".dae", ".3ds", ".3mf", ".blend", ".abc", ".zip"
+]);
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,7 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (file.size > MAX_SIZE) {
-      return NextResponse.json({ error: "파일 크기 100MB 초과" }, { status: 400 });
+      return NextResponse.json({ error: "파일 크기 500MB 초과" }, { status: 400 });
     }
 
     const id = nanoid(10);

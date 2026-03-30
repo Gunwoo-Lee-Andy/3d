@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
-const GLBViewer = dynamic(() => import("./GLBViewer"), {
+const ModelViewer = dynamic(() => import("./ModelViewer"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-zinc-400 text-sm">
@@ -22,7 +22,10 @@ const ARViewer = dynamic(() => import("./ARViewer"), {
   ),
 });
 
-const ACCEPTED = [".glb", ".gltf", ".obj", ".stl", ".usdz"];
+const ACCEPTED = [
+  ".glb", ".gltf", ".obj", ".mtl", ".stl", ".usdz", ".fbx",
+  ".ply", ".dae", ".3ds", ".3mf", ".blend", ".abc", ".zip"
+];
 
 type UploadState = "idle" | "uploading" | "error";
 
@@ -129,7 +132,7 @@ export default function UploadAndView() {
 
         {/* Viewer */}
         <div className="flex-1 min-h-0">
-          {arMode ? <ARViewer url={blobUrl} /> : <GLBViewer url={blobUrl} />}
+          {arMode ? <ARViewer url={blobUrl} /> : <ModelViewer url={blobUrl} filename={fileName} />}
         </div>
       </div>
     );
@@ -143,7 +146,7 @@ export default function UploadAndView() {
           3D 모델을 업로드하고<br />바로 공유하세요
         </h2>
         <p className="text-zinc-400 text-lg">
-          GLB, OBJ, STL 파일을 드래그하면 뷰어와 공유 링크가 생성됩니다
+          3D 모델 파일을 드래그하거나 ZIP으로 묶인 파일을 업로드하세요
         </p>
       </div>
 
@@ -173,7 +176,7 @@ export default function UploadAndView() {
         onChange={onFileChange}
       />
 
-      <p className="text-xs text-zinc-600">최대 파일 크기 100MB · 업로드 후 영구 공유 링크 생성</p>
+      <p className="text-xs text-zinc-600">최대 파일 크기 500MB · 업로드 후 영구 공유 링크 생성</p>
     </section>
   );
 }
