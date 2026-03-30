@@ -31,7 +31,8 @@ export async function storeFile(
   // Vercel Blob (배포 환경)
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const { put } = await import("@vercel/blob");
-    const blob = await put(`models/${id}${ext}`, buffer, {
+    // 경로 형식: 슬래시 제거 (Vercel Blob 제약 우회)
+    const blob = await put(`${id}${ext}`, buffer, {
       access: "public",
       contentType: getMimeType(ext),
     });
