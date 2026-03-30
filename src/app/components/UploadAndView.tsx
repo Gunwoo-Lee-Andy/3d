@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { put } from "@vercel/blob/client";
 
 const ModelViewer = dynamic(() => import("./ModelViewer"), {
   ssr: false,
@@ -49,13 +50,25 @@ export default function UploadAndView() {
     setUploadState("uploading");
     setUploadError("");
 
-    // 백그라운드 업로드 → 완료 시 /view/:id 로 이동
+    // 클라이언트 직접 업로드 (Vercel Blob)
     try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: form });
+      // 1. Vercel Blob에 직접 업로드 (클라이언트 API)
+      const blob = await put(file.name, file);
+
+      // 2. 서버에 메타데이터 저장 (URL → DB 저장)
+      const res = await fetch("/api/save-model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: blob.url,
+          fileName: file.name,
+          size: file.size,
+        }),
+      });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "업로드 실패");
+      if (!res.ok) throw new Error(data.error ?? "메타데이터 저장 실패");
+
       URL.revokeObjectURL(localUrl);
       router.push(data.shareUrl);
     } catch (err) {
