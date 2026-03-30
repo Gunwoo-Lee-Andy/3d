@@ -11,6 +11,16 @@ export interface StorageResult {
   size: number;
 }
 
+/**
+ * 파일명을 안전한 형식으로 정규화 (특수문자 제거)
+ */
+function sanitizeFilename(filename: string): string {
+  return filename
+    .replace(/[^\w.-]/g, "_") // 특수문자를 언더스코어로 변환
+    .replace(/_+/g, "_") // 연속된 언더스코어 제거
+    .toLowerCase();
+}
+
 export async function storeFile(
   buffer: Buffer,
   filename: string,

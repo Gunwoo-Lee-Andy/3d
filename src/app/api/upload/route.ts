@@ -30,11 +30,18 @@ export async function POST(req: NextRequest) {
 
     const id = nanoid(10);
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { url, size } = await storeFile(buffer, file.name, id);
+
+    // 파일명 정규화 (특수문자 제거)
+    const sanitizedName = file.name
+      .replace(/[^\w.-]/g, "_") // 특수문자를 언더스코어로 변환
+      .replace(/_+/g, "_") // 연속된 언더스코어 제거
+      .toLowerCase();
+
+    const { url, size } = await storeFile(buffer, sanitizedName, id);
 
     await saveModel({
       id,
-      name: file.name,
+      name: sanitizedName,
       url,
       size,
       ext,
