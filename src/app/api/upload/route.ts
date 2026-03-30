@@ -45,7 +45,16 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ id, url, shareUrl: `/view/${id}` });
   } catch (err) {
-    console.error("[upload]", err);
-    return NextResponse.json({ error: "업로드 실패" }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? err.stack : "";
+    console.error("[upload] 에러:", { message: errorMessage, stack: errorStack });
+    return NextResponse.json(
+      {
+        error: "업로드 실패",
+        details: errorMessage, // 🔍 상세 에러 메시지 추가
+        stack: process.env.NODE_ENV === "development" ? errorStack : undefined,
+      },
+      { status: 500 }
+    );
   }
 }

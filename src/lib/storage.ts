@@ -25,9 +25,9 @@ export async function storeFile(
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const { put } = await import("@vercel/blob");
     // 경로 형식: 슬래시 제거 (Vercel Blob 제약 우회)
+    // 주의: contentType 제거 (Vercel Blob이 자동 감지하도록)
     const blob = await put(`${id}${normalizedExt}`, buffer, {
       access: "public",
-      contentType: getMimeType(normalizedExt),
     });
     return { url: blob.url, size: buffer.length };
   }
@@ -44,16 +44,16 @@ function getMimeType(ext: string): string {
   const map: Record<string, string> = {
     ".glb": "model/gltf-binary",
     ".gltf": "model/gltf+json",
-    ".obj": "text/plain; charset=utf-8",
-    ".mtl": "text/plain; charset=utf-8",
+    ".obj": "text/plain",
+    ".mtl": "text/plain",
     ".stl": "application/octet-stream",
     ".ply": "application/octet-stream",
     ".usdz": "model/vnd.usdz+zip",
     ".fbx": "application/octet-stream",
     ".zip": "application/zip",
-    ".dae": "model/vnd.collada+xml; charset=utf-8",
+    ".dae": "model/vnd.collada+xml",
     ".3ds": "application/octet-stream",
-    ".3mf": "model/3mf+xml; charset=utf-8",
+    ".3mf": "model/3mf+xml",
     ".blend": "application/octet-stream",
     ".abc": "application/octet-stream",
   };
