@@ -52,16 +52,22 @@ export default function UploadAndView() {
 
     // 클라이언트 직접 업로드 (Vercel Blob)
     try {
-      // 1. Vercel Blob에 직접 업로드 (클라이언트 API)
-      const blob = await put(file.name, file);
+      // 1. 파일명 정규화 (Vercel Blob pathname 검증 우회)
+      const sanitizedName = file.name
+        .replace(/[^\w.-]/g, "_")  // 특수문자 → 언더스코어
+        .replace(/_+/g, "_")       // 연속된 언더스코어 제거
+        .toLowerCase();
 
-      // 2. 서버에 메타데이터 저장 (URL → DB 저장)
+      // 2. Vercel Blob에 직접 업로드 (클라이언트 API)
+      const blob = await (put as any)(sanitizedName, file);
+
+      // 3. 서버에 메타데이터 저장 (URL → DB 저장)
       const res = await fetch("/api/save-model", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: blob.url,
-          fileName: file.name,
+          fileName: sanitizedName,  // 정규화된 이름으로 저장
           size: file.size,
         }),
       });
