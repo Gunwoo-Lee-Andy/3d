@@ -11,30 +11,23 @@ export interface StorageResult {
   size: number;
 }
 
-/**
- * 파일명을 안전한 형식으로 정규화 (특수문자 제거)
- */
-function sanitizeFilename(filename: string): string {
-  return filename
-    .replace(/[^\w.-]/g, "_") // 특수문자를 언더스코어로 변환
-    .replace(/_+/g, "_") // 연속된 언더스코어 제거
-    .toLowerCase();
-}
-
 export async function storeFile(
   buffer: Buffer,
-  filename: string,
+  ext: string,
   id: string
 ): Promise<StorageResult> {
-  const ext = path.extname(filename).toLowerCase();
+  // 확장자 검증
+  const normalizedExt = ext.toLowerCase().startsWith(".")
+    ? ext.toLowerCase()
+    : `.${ext.toLowerCase()}`;
 
   // Vercel Blob (배포 환경)
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const { put } = await import("@vercel/blob");
     // 경로 형식: 슬래시 제거 (Vercel Blob 제약 우회)
-    const blob = await put(`${id}${ext}`, buffer, {
+    const blob = await put(`${id}${normalizedExt}`, buffer, {
       access: "public",
-      contentType: getMimeType(ext),
+      contentType: getMimeType(normalizedExt),
     });
     return { url: blob.url, size: buffer.length };
   }
@@ -42,9 +35,9 @@ export async function storeFile(
   // 로컬 파일시스템 (개발 환경)
   const uploadDir = path.join(process.cwd(), "public", "uploads");
   await mkdir(uploadDir, { recursive: true });
-  const filePath = path.join(uploadDir, `${id}${ext}`);
+  const filePath = path.join(uploadDir, `${id}${normalizedExt}`);
   await writeFile(filePath, buffer);
-  return { url: `/uploads/${id}${ext}`, size: buffer.length };
+  return { url: `/uploads/${id}${normalizedExt}`, size: buffer.length };
 }
 
 function getMimeType(ext: string): string {
