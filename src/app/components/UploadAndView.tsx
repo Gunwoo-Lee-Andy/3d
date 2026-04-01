@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { upload } from "@vercel/blob/client";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -51,21 +52,26 @@ export default function UploadAndView() {
 
     // 클라이언트 직접 업로드 (Vercel Blob)
     try {
-      // 파일명 정규화 (특수문자 제거)
+      // 파일명 정규화 (특수문자 제거 → Blob pathname 검증 통과)
       const sanitizedName = file.name
         .replace(/[^\w.-]/g, "_")
         .replace(/_+/g, "_")
         .toLowerCase();
 
-      // request.body 스트리밍 업로드 (서버 4.5MB 제한 우회)
-      const res = await fetch(`/api/upload?filename=${encodeURIComponent(sanitizedName)}`, {
-        method: "POST",
-        body: file,
-        headers: { "content-type": file.type || "application/octet-stream" },
+      // 클라이언트 → Vercel Blob 직접 업로드 (서버 4.5MB 제한 완전 우회)
+      const blob = await upload(sanitizedName, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
       });
 
+      // Blob URL로 DB에 저장 → id 획득
+      const res = await fetch("/api/save-model", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: blob.url, fileName: sanitizedName, size: file.size }),
+      });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "업로드 실패");
+      if (!res.ok) throw new Error(data.error ?? "저장 실패");
 
       URL.revokeObjectURL(localUrl);
       router.push(data.shareUrl);
