@@ -1,60 +1,42 @@
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
-import path from "path";
-import { storeFile } from "@/lib/storage";
-import { saveModel } from "@/lib/db";
 
-const MAX_SIZE = 500 * 1024 * 1024; // 500MB
-const ALLOWED_EXT = new Set([
-  ".glb", ".gltf", ".obj", ".mtl", ".stl", ".usdz", ".fbx",
-  ".ply", ".dae", ".3ds", ".3mf", ".blend", ".abc", ".zip"
-]);
+const ALLOWED_CONTENT_TYPES = [
+  "model/gltf-binary",
+  "model/gltf+json",
+  "text/plain",
+  "application/octet-stream",
+  "model/vnd.usdz+zip",
+  "application/zip",
+  "model/vnd.collada+xml",
+  "model/3mf+xml",
+  "model/3mf",
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+];
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  const body = (await req.json()) as HandleUploadBody;
+
   try {
-    const form = await req.formData();
-    const file = form.get("file") as File | null;
-
-    if (!file) {
-      return NextResponse.json({ error: "파일이 없습니다" }, { status: 400 });
-    }
-
-    const ext = path.extname(file.name).toLowerCase();
-    if (!ALLOWED_EXT.has(ext)) {
-      return NextResponse.json({ error: `지원하지 않는 형식: ${ext}` }, { status: 400 });
-    }
-
-    if (file.size > MAX_SIZE) {
-      return NextResponse.json({ error: "파일 크기 500MB 초과" }, { status: 400 });
-    }
-
-    const id = nanoid(10);
-    const buffer = Buffer.from(await file.arrayBuffer());
-
-    const { url, size } = await storeFile(buffer, ext, id);
-
-    await saveModel({
-      id,
-      name: file.name, // 원본 파일명 저장 (정규화하지 않음)
-      url,
-      size,
-      ext,
-      createdAt: new Date().toISOString(),
-      views: 0,
+    const jsonResponse = await handleUpload({
+      body,
+      request: req,
+      onBeforeGenerateToken: async () => ({
+        allowedContentTypes: ALLOWED_CONTENT_TYPES,
+        maximumSizeInBytes: 500 * 1024 * 1024, // 500MB
+      }),
+      onUploadCompleted: async ({ blob }) => {
+        console.log("[upload] 완료:", blob.url);
+      },
     });
 
-    return NextResponse.json({ id, url, shareUrl: `/view/${id}` });
+    return NextResponse.json(jsonResponse);
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err);
-    const errorStack = err instanceof Error ? err.stack : "";
-    console.error("[upload] 에러:", { message: errorMessage, stack: errorStack });
     return NextResponse.json(
-      {
-        error: "업로드 실패",
-        details: errorMessage, // 🔍 상세 에러 메시지 추가
-        stack: process.env.NODE_ENV === "development" ? errorStack : undefined,
-      },
-      { status: 500 }
+      { error: String(err) },
+      { status: 400 }
     );
   }
 }

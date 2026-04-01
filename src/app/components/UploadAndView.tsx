@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { put } from "@vercel/blob/client";
+import { upload } from "@vercel/blob/client";
 
 const ModelViewer = dynamic(() => import("./ModelViewer"), {
   ssr: false,
@@ -58,8 +58,11 @@ export default function UploadAndView() {
         .replace(/_+/g, "_")       // 연속된 언더스코어 제거
         .toLowerCase();
 
-      // 2. Vercel Blob에 직접 업로드 (클라이언트 API)
-      const blob = await (put as any)(sanitizedName, file);
+      // 2. Vercel Blob에 직접 업로드 (클라이언트 → Blob 직접, 서버 4.5MB 제한 우회)
+      const blob = await upload(sanitizedName, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
 
       // 3. 서버에 메타데이터 저장 (URL → DB 저장)
       const res = await fetch("/api/save-model", {
