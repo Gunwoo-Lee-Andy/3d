@@ -3,7 +3,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import { upload } from "@vercel/blob/client";
 
 const ModelViewer = dynamic(() => import("./ModelViewer"), {
   ssr: false,
@@ -52,31 +51,21 @@ export default function UploadAndView() {
 
     // 클라이언트 직접 업로드 (Vercel Blob)
     try {
-      // 1. 파일명 정규화 (Vercel Blob pathname 검증 우회)
+      // 파일명 정규화 (특수문자 제거)
       const sanitizedName = file.name
-        .replace(/[^\w.-]/g, "_")  // 특수문자 → 언더스코어
-        .replace(/_+/g, "_")       // 연속된 언더스코어 제거
+        .replace(/[^\w.-]/g, "_")
+        .replace(/_+/g, "_")
         .toLowerCase();
 
-      // 2. Vercel Blob에 직접 업로드 (클라이언트 → Blob 직접, 서버 4.5MB 제한 우회)
-      const blob = await upload(sanitizedName, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-      });
-
-      // 3. 서버에 메타데이터 저장 (URL → DB 저장)
-      const res = await fetch("/api/save-model", {
+      // request.body 스트리밍 업로드 (서버 4.5MB 제한 우회)
+      const res = await fetch(`/api/upload?filename=${encodeURIComponent(sanitizedName)}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: blob.url,
-          fileName: sanitizedName,  // 정규화된 이름으로 저장
-          size: file.size,
-        }),
+        body: file,
+        headers: { "content-type": file.type || "application/octet-stream" },
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "메타데이터 저장 실패");
+      if (!res.ok) throw new Error(data.error ?? "업로드 실패");
 
       URL.revokeObjectURL(localUrl);
       router.push(data.shareUrl);

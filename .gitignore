@@ -41,3 +41,4 @@ yarn-error.log*
 next-env.d.ts
 autoresearch-results.tsv
 public/uploads/
+.env*.local
